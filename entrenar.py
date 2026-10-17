@@ -1,11 +1,18 @@
 """Pipeline de entrenamiento del modelo de abandono de clientes.
 
-Versión 1: valida los datos y se detiene con un mensaje claro si algo está mal.
+Versión 2: valida los datos y entrena un modelo base con métricas sobre prueba.
 """
 import sys
 
 import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (accuracy_score, f1_score, precision_score,
+                             recall_score, roc_auc_score)
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
+SEMILLA = 42
 RUTA_DATOS = "datos/clientes.csv"
 OBJETIVO = "abandona"
 COLUMNAS_ENTRADA = [
@@ -66,6 +73,16 @@ def validar_datos(ruta: str) -> pd.DataFrame:
     return df
 
 
+def calcular_metricas(y_real, y_pred, y_prob) -> dict:
+    return {
+        "exactitud": accuracy_score(y_real, y_pred),
+        "precision": precision_score(y_real, y_pred, zero_division=0),
+        "recall": recall_score(y_real, y_pred),
+        "f1": f1_score(y_real, y_pred),
+        "roc_auc": roc_auc_score(y_real, y_prob),
+    }
+
+
 if __name__ == "__main__":
     try:
         datos = validar_datos(RUTA_DATOS)
@@ -74,3 +91,23 @@ if __name__ == "__main__":
         sys.exit(1)
     print(f"Validación OK: {datos.shape[0]} filas, {datos.shape[1]} columnas, "
           f"{datos.isna().mean().max():.1%} de vacíos máximo por columna")
+
+    X = datos[COLUMNAS_ENTRADA]
+    y = datos[OBJETIVO]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.25, random_state=SEMILLA, stratify=y
+    )
+
+    # Modelo base: regresión logística. El escalado va dentro del pipeline para que
+    # el servicio aplique exactamente la misma transformación (evita training-serving skew).
+    modelo = Pipeline([
+        ("escalar", StandardScaler()),
+        ("clasificador", LogisticRegression(max_iter=1000, random_state=SEMILLA)),
+    ])
+    modelo.fit(X_train, y_train)
+
+    metricas = calcular_metricas(
+        y_test, modelo.predict(X_test), modelo.predict_proba(X_test)[:, 1]
+    )
+    for nombre, valor in metricas.items():
+        print(f"  {nombre:<10} {valor:.3f}")
