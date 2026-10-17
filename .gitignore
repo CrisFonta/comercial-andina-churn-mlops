@@ -1,0 +1,12 @@
+# Entorno y caches (se regeneran)
+.venv/
+__pycache__/
+.pytest_cache/
+
+# Seguimiento de experimentos (se regenera al entrenar)
+mlflow.db
+mlruns/
+mlartifacts/
+
+# Modelos entrenados (los reconstruye entrenar.py / GitHub Actions)
+modelos/*.joblib
