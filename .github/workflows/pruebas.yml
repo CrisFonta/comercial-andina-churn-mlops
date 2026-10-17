@@ -1,0 +1,30 @@
+name: Entrenar y probar
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  entrenar-y-probar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Validar datos, entrenar y aplicar la puerta de calidad
+        run: >
+          python entrenar.py
+          --modelo logistica --balancear --variables reducidas
+          --umbral 0.50 --nombre ci_${{ github.run_number }}
+
+      - name: Ejecutar pruebas automáticas
+        run: python -m pytest -v pruebas
