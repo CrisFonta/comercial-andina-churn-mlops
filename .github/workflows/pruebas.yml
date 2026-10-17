@@ -24,7 +24,7 @@ jobs:
         run: >
           python entrenar.py
           --modelo logistica --balancear --variables reducidas
-          --umbral 0.50 --nombre ci_${{ github.run_number }}
+          --umbral 0.90 --nombre ci_${{ github.run_number }}
 
       - name: Ejecutar pruebas automáticas
         run: python -m pytest -v pruebas
