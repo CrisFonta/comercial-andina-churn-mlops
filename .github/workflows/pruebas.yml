@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar el código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configurar Python 3.13
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
           cache: pip
@@ -24,7 +24,7 @@ jobs:
         run: >
           python entrenar.py
           --modelo logistica --balancear --variables reducidas
-          --umbral 0.90 --nombre ci_${{ github.run_number }}
+          --umbral 0.50 --nombre ci_${{ github.run_number }}
 
       - name: Ejecutar pruebas automáticas
         run: python -m pytest -v pruebas
